@@ -26,8 +26,9 @@ const librosSchema = new mongoose.Schema({
   autor: String   
 });
 
+
 const User = mongoose.model('User', userSchema);
-const Libro = mongoose.model('Libros', librosSchema); 
+const Libro = mongoose.model('Libro', librosSchema);
 
 app.post('/api/login', async (req, res) => {
   try {
@@ -59,30 +60,57 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-
-app.get('/api/libros', async (req, res) => { 
+app.get('/api/users', async (req, res) => {
   try {
-    const libros = await Libro.find(); 
-    res.json(libros);
+    const usuarios = await User.find().select('-password');
+    res.json(usuarios);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-app.post('/api/libros', async (req, res) => {
+app.post('/api/users', async (req, res) => {
   try {
-    const nuevoLibro = new Libro(req.body);
-    await nuevoLibro.save();
-    res.status(201).json(nuevoLibro);
+    const nuevoUsuario = new User(req.body);
+    await nuevoUsuario.save();
+    const usuarioSinPassword = nuevoUsuario.toObject();
+    delete usuarioSinPassword.password;
+    res.status(201).json(usuarioSinPassword);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-app.get('/api/users', async (req, res) => { 
+app.put('/api/users/:id', async (req, res) => {
   try {
-    const users = await User.find(); 
-    res.json(users);
+    const datosActualizar = { ...req.body };
+
+    if (!datosActualizar.password) {
+      delete datosActualizar.password;
+    }
+
+    const usuarioActualizado = await User.findByIdAndUpdate(
+      req.params.id,
+      datosActualizar,
+      { new: true, runValidators: true }
+    ).select('-password');
+    
+    if (!usuarioActualizado) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    res.json(usuarioActualizado);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+  try {
+    const usuarioEliminado = await User.findByIdAndDelete(req.params.id);
+    if (!usuarioEliminado) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    res.json({ message: 'Usuario eliminado exitosamente' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -130,65 +158,6 @@ app.delete('/api/libros/:id', async (req, res) => {
       return res.status(404).json({ error: 'Libro no encontrado' });
     }
     res.json({ message: 'Libro eliminado exitosamente', libro: libroEliminado });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-
-app.get('/api/users', async (req, res) => {
-  try {
-    const usuarios = await User.find().select('-password'); 
-    res.json(usuarios);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-
-app.post('/api/users', async (req, res) => {
-  try {
-    const nuevoUsuario = new User(req.body);
-    await nuevoUsuario.save();
-    const usuarioSinPassword = nuevoUsuario.toObject();
-    delete usuarioSinPassword.password;
-    res.status(201).json(usuarioSinPassword);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.put('/api/users/:id', async (req, res) => {
-  try {
-    const datosActualizar = { ...req.body };
-
-    if (!datosActualizar.password) {
-      delete datosActualizar.password;
-    }
-
-    const usuarioActualizado = await User.findByIdAndUpdate(
-      req.params.id,
-      datosActualizar,
-      { new: true, runValidators: true }
-    ).select('-password');
-    
-    if (!usuarioActualizado) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-    res.json(usuarioActualizado);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-
-app.delete('/api/users/:id', async (req, res) => {
-  try {
-    const usuarioEliminado = await User.findByIdAndDelete(req.params.id);
-    if (!usuarioEliminado) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-    res.json({ message: 'Usuario eliminado exitosamente' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
