@@ -97,7 +97,6 @@ app.get('/api/libros', async (req, res) => {
   }
 });
 
-// Crear un libro
 app.post('/api/libros', async (req, res) => {
   try {
     const nuevoLibro = new Libro(req.body);
@@ -108,7 +107,6 @@ app.post('/api/libros', async (req, res) => {
   }
 });
 
-// Actualizar un libro
 app.put('/api/libros/:id', async (req, res) => {
   try {
     const libroActualizado = await Libro.findByIdAndUpdate(
@@ -137,6 +135,64 @@ app.delete('/api/libros/:id', async (req, res) => {
   }
 });
 
+
+app.get('/api/usuarios', async (req, res) => {
+  try {
+    const usuarios = await User.find().select('-password'); 
+    res.json(usuarios);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.post('/api/usuarios', async (req, res) => {
+  try {
+    const nuevoUsuario = new User(req.body);
+    await nuevoUsuario.save();
+    const usuarioSinPassword = nuevoUsuario.toObject();
+    delete usuarioSinPassword.password;
+    res.status(201).json(usuarioSinPassword);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/usuarios/:id', async (req, res) => {
+  try {
+    const datosActualizar = { ...req.body };
+
+    if (!datosActualizar.password) {
+      delete datosActualizar.password;
+    }
+
+    const usuarioActualizado = await User.findByIdAndUpdate(
+      req.params.id,
+      datosActualizar,
+      { new: true, runValidators: true }
+    ).select('-password');
+    
+    if (!usuarioActualizado) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    res.json(usuarioActualizado);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.delete('/api/usuarios/:id', async (req, res) => {
+  try {
+    const usuarioEliminado = await User.findByIdAndDelete(req.params.id);
+    if (!usuarioEliminado) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    res.json({ message: 'Usuario eliminado exitosamente' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 
 app.listen(PORT, () => {
