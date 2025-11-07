@@ -136,7 +136,7 @@ app.delete('/api/libros/:id', async (req, res) => {
 });
 
 
-app.get('/api/usuarios', async (req, res) => {
+app.get('/api/users', async (req, res) => {
   try {
     const usuarios = await User.find().select('-password'); 
     res.json(usuarios);
@@ -146,7 +146,7 @@ app.get('/api/usuarios', async (req, res) => {
 });
 
 
-app.post('/api/usuarios', async (req, res) => {
+app.post('/api/users', async (req, res) => {
   try {
     const nuevoUsuario = new User(req.body);
     await nuevoUsuario.save();
@@ -158,7 +158,7 @@ app.post('/api/usuarios', async (req, res) => {
   }
 });
 
-app.put('/api/usuarios/:id', async (req, res) => {
+app.put('/api/users/:id', async (req, res) => {
   try {
     const datosActualizar = { ...req.body };
 
@@ -182,7 +182,7 @@ app.put('/api/usuarios/:id', async (req, res) => {
 });
 
 
-app.delete('/api/usuarios/:id', async (req, res) => {
+app.delete('/api/users/:id', async (req, res) => {
   try {
     const usuarioEliminado = await User.findByIdAndDelete(req.params.id);
     if (!usuarioEliminado) {
