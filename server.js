@@ -218,6 +218,17 @@ app.delete('/api/prestamos/:id', async (req, res) => {
   }
 });
 
+app.get('/api/prestamos/usuario/:usuarioId', async (req, res) => {
+  try {
+    const prestamos = await Prestamo.find({ usuario: req.params.usuarioId })
+      .populate('libro', 'titulo autor')
+      .populate('usuario', 'name username');
+    res.json(prestamos);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
 });
