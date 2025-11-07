@@ -12,7 +12,9 @@ app.use(express.json());
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
-});
+})
+  .then(() => console.log('✅ Conectado a MongoDB'))
+  .catch(err => console.error('❌ Error de conexión a MongoDB:', err));
 
 const userSchema = new mongoose.Schema({
   username: String,
@@ -22,20 +24,26 @@ const userSchema = new mongoose.Schema({
 });
 
 const librosSchema = new mongoose.Schema({
-  titulo: String,  
-  autor: String   
+  titulo: String,
+  autor: String
 });
 
+const prestamosSchema = new mongoose.Schema({
+  usuario: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  libro: { type: mongoose.Schema.Types.ObjectId, ref: 'Libro' },
+  fechaPrestamo: { type: Date, default: Date.now },
+  fechaEntrega: { type: Date } 
+});
 
 const User = mongoose.model('User', userSchema);
 const Libro = mongoose.model('Libro', librosSchema);
+const Prestamo = mongoose.model('Prestamo', prestamosSchema);
 
 app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-    
     const user = await User.findOne({ username, password });
-    
+
     if (user) {
       res.json({
         success: true,
@@ -84,20 +92,18 @@ app.post('/api/users', async (req, res) => {
 app.put('/api/users/:id', async (req, res) => {
   try {
     const datosActualizar = { ...req.body };
-
-    if (!datosActualizar.password) {
-      delete datosActualizar.password;
-    }
+    if (!datosActualizar.password) delete datosActualizar.password;
 
     const usuarioActualizado = await User.findByIdAndUpdate(
       req.params.id,
       datosActualizar,
       { new: true, runValidators: true }
     ).select('-password');
-    
+
     if (!usuarioActualizado) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
+
     res.json(usuarioActualizado);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -116,7 +122,7 @@ app.delete('/api/users/:id', async (req, res) => {
   }
 });
 
-app.get('/api/libros', async (req, res) => { 
+app.get('/api/libros', async (req, res) => {
   try {
     const libros = await Libro.find();
     res.json(libros);
@@ -163,15 +169,6 @@ app.delete('/api/libros/:id', async (req, res) => {
   }
 });
 
-const prestamosSchema = new mongoose.Schema({
-  usuario: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  libro: { type: mongoose.Schema.Types.ObjectId, ref: 'Libro' },
-  fechaPrestamo: { type: Date, default: Date.now },
-});
-
-const Prestamo = mongoose.model('Prestamo', prestamosSchema);
-
-
 app.get('/api/prestamos', async (req, res) => {
   try {
     const prestamos = await Prestamo.find()
@@ -183,24 +180,31 @@ app.get('/api/prestamos', async (req, res) => {
   }
 });
 
-
 app.post('/api/prestamos', async (req, res) => {
   try {
-    const { usuarioId, libroId } = req.body;
+    const { usuarioId, libroId, fechaEntrega } = req.body;
+
+    if (fechaEntrega && new Date(fechaEntrega) < new Date()) {
+      return res.status(400).json({ error: 'La fecha de entrega no puede ser anterior a hoy' });
+    }
+
     const nuevoPrestamo = new Prestamo({
       usuario: usuarioId,
       libro: libroId,
+      fechaEntrega
     });
+
     await nuevoPrestamo.save();
+
     const prestamoPopulado = await Prestamo.findById(nuevoPrestamo._id)
       .populate('usuario', 'name username')
       .populate('libro', 'titulo autor');
+
     res.status(201).json(prestamoPopulado);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 
 app.delete('/api/prestamos/:id', async (req, res) => {
   try {
@@ -214,7 +218,6 @@ app.delete('/api/prestamos/:id', async (req, res) => {
   }
 });
 
-
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
 });
