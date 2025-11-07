@@ -85,7 +85,7 @@ app.post('/api/libros', async (req, res) => {
   }
 });
 
-app.get('/api/users', async (req, res) => { 
+app.get('/api/getusers', async (req, res) => { 
   try {
     const users = await User.find(); 
     res.json(users);
@@ -93,6 +93,60 @@ app.get('/api/users', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// ... código anterior ...
+
+// Obtener todos los libros
+app.get('/api/libros', async (req, res) => { 
+  try {
+    const libros = await Libro.find();
+    res.json(libros);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Crear un libro
+app.post('/api/libros', async (req, res) => {
+  try {
+    const nuevoLibro = new Libro(req.body);
+    await nuevoLibro.save();
+    res.status(201).json(nuevoLibro);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Actualizar un libro
+app.put('/api/libros/:id', async (req, res) => {
+  try {
+    const libroActualizado = await Libro.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!libroActualizado) {
+      return res.status(404).json({ error: 'Libro no encontrado' });
+    }
+    res.json(libroActualizado);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/libros/:id', async (req, res) => {
+  try {
+    const libroEliminado = await Libro.findByIdAndDelete(req.params.id);
+    if (!libroEliminado) {
+      return res.status(404).json({ error: 'Libro no encontrado' });
+    }
+    res.json({ message: 'Libro eliminado exitosamente', libro: libroEliminado });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
