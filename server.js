@@ -24,7 +24,14 @@ const userSchema = new mongoose.Schema({
   name: String
 });
 
+// Modelo de Libros (CORREGIDO)
+const librosSchema = new mongoose.Schema({
+  titulo: String,  // 'String' con mayúscula
+  autor: String    // 'String' con mayúscula
+});
+
 const User = mongoose.model('User', userSchema);
+const Libro = mongoose.model('Libros', librosSchema); // CREAR EL MODELO
 
 // Ruta de Login
 app.post('/api/login', async (req, res) => {
@@ -54,6 +61,27 @@ app.post('/api/login', async (req, res) => {
       success: false,
       message: 'Error de servidor'
     });
+  }
+});
+
+// Ruta para obtener libros (CORREGIDO)
+app.get('/api/libros', async (req, res) => { 
+  try {
+    const libros = await Libro.find(); // Usar el modelo Libro con .find()
+    res.json(libros);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Ruta para crear un libro (OPCIONAL)
+app.post('/api/libros', async (req, res) => {
+  try {
+    const nuevoLibro = new Libro(req.body);
+    await nuevoLibro.save();
+    res.status(201).json(nuevoLibro);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
