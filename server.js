@@ -6,17 +6,14 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Conexión a MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 });
 
-// Modelo de Usuario
 const userSchema = new mongoose.Schema({
   username: String,
   password: String,
@@ -24,16 +21,14 @@ const userSchema = new mongoose.Schema({
   name: String
 });
 
-// Modelo de Libros (CORREGIDO)
 const librosSchema = new mongoose.Schema({
-  titulo: String,  // 'String' con mayúscula
-  autor: String    // 'String' con mayúscula
+  titulo: String,  
+  autor: String   
 });
 
 const User = mongoose.model('User', userSchema);
-const Libro = mongoose.model('Libros', librosSchema); // CREAR EL MODELO
+const Libro = mongoose.model('Libros', librosSchema); 
 
-// Ruta de Login
 app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -64,17 +59,16 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Ruta para obtener libros (CORREGIDO)
+
 app.get('/api/libros', async (req, res) => { 
   try {
-    const libros = await Libro.find(); // Usar el modelo Libro con .find()
+    const libros = await Libro.find(); 
     res.json(libros);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-// Ruta para crear un libro (OPCIONAL)
 app.post('/api/libros', async (req, res) => {
   try {
     const nuevoLibro = new Libro(req.body);
@@ -85,7 +79,7 @@ app.post('/api/libros', async (req, res) => {
   }
 });
 
-app.get('/api/getusers', async (req, res) => { 
+app.get('/api/users', async (req, res) => { 
   try {
     const users = await User.find(); 
     res.json(users);
@@ -94,9 +88,6 @@ app.get('/api/getusers', async (req, res) => {
   }
 });
 
-// ... código anterior ...
-
-// Obtener todos los libros
 app.get('/api/libros', async (req, res) => { 
   try {
     const libros = await Libro.find();
