@@ -163,6 +163,57 @@ app.delete('/api/libros/:id', async (req, res) => {
   }
 });
 
+const prestamosSchema = new mongoose.Schema({
+  usuario: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  libro: { type: mongoose.Schema.Types.ObjectId, ref: 'Libro' },
+  fechaPrestamo: { type: Date, default: Date.now },
+});
+
+const Prestamo = mongoose.model('Prestamo', prestamosSchema);
+
+
+app.get('/api/prestamos', async (req, res) => {
+  try {
+    const prestamos = await Prestamo.find()
+      .populate('usuario', 'name username')
+      .populate('libro', 'titulo autor');
+    res.json(prestamos);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.post('/api/prestamos', async (req, res) => {
+  try {
+    const { usuarioId, libroId } = req.body;
+    const nuevoPrestamo = new Prestamo({
+      usuario: usuarioId,
+      libro: libroId,
+    });
+    await nuevoPrestamo.save();
+    const prestamoPopulado = await Prestamo.findById(nuevoPrestamo._id)
+      .populate('usuario', 'name username')
+      .populate('libro', 'titulo autor');
+    res.status(201).json(prestamoPopulado);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.delete('/api/prestamos/:id', async (req, res) => {
+  try {
+    const prestamoEliminado = await Prestamo.findByIdAndDelete(req.params.id);
+    if (!prestamoEliminado) {
+      return res.status(404).json({ error: 'Préstamo no encontrado' });
+    }
+    res.json({ message: 'Préstamo eliminado exitosamente' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
